@@ -22,10 +22,6 @@ import java.util.Map;
 @SpringBootApplication
 public class KafkaExampleApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(KafkaExampleApplication.class, args);
-    }
-
     @Autowired
     private KafkaProperties kafkaProperties;
 
@@ -36,12 +32,9 @@ public class KafkaExampleApplication {
 
     @Bean
     public Map<String, Object> producerConfigs() {
-        Map<String, Object> props =
-                new HashMap<>(kafkaProperties.buildProducerProperties());
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
-                StringSerializer.class);
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-                JsonSerializer.class);
+        Map<String, Object> props = new HashMap<>(kafkaProperties.buildProducerProperties());
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         return props;
     }
 
@@ -79,6 +72,7 @@ public class KafkaExampleApplication {
 //        return props;
 //    }
 
+    // -------------------JSON Consumer Configuration---------------------
     @Bean
     public ConsumerFactory<String, Object> consumerFactory() {
         final JsonDeserializer<Object> jsonDeserializer = new JsonDeserializer<>();
@@ -97,7 +91,8 @@ public class KafkaExampleApplication {
         return factory;
     }
 
-    // String Consumer Configuration
+
+    // -------------------String Consumer Configuration---------------------
 
     @Bean
     public ConsumerFactory<String, String> stringConsumerFactory() {
@@ -115,7 +110,8 @@ public class KafkaExampleApplication {
         return factory;
     }
 
-    // Byte Array Consumer Configuration
+
+    // --------------Byte Array Consumer Configuration---------------------
 
     @Bean
     public ConsumerFactory<String, byte[]> byteArrayConsumerFactory() {
@@ -127,8 +123,15 @@ public class KafkaExampleApplication {
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, byte[]> kafkaListenerByteArrayContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, byte[]> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
+                                         new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(byteArrayConsumerFactory());
         return factory;
     }
+
+
+
+    public static void main(String[] args) {
+        SpringApplication.run(KafkaExampleApplication.class, args);
+    }
+
 }

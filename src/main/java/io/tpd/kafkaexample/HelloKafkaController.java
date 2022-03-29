@@ -19,61 +19,64 @@ import java.util.stream.StreamSupport;
 @RestController
 public class HelloKafkaController {
 
-    private static final Logger logger =
-            LoggerFactory.getLogger(HelloKafkaController.class);
+    private static final Logger logger = LoggerFactory.getLogger(HelloKafkaController.class);
 
-    private final KafkaTemplate<String, Object> template;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
     private final String topicName;
     private final int messagesPerRequest;
     private CountDownLatch latch;
 
     public HelloKafkaController(
-            final KafkaTemplate<String, Object> template,
+            final KafkaTemplate<String, Object> kafkaTemplate,
             @Value("${tpd.topic-name}") final String topicName,
-            @Value("${tpd.messages-per-request}") final int messagesPerRequest) {
-        this.template = template;
+            @Value("${tpd.messages-per-request}") final int messagesPerRequest)
+    {
+        this.kafkaTemplate = kafkaTemplate;
         this.topicName = topicName;
         this.messagesPerRequest = messagesPerRequest;
     }
 
     @GetMapping("/hello")
-    public String hello() throws Exception {
+    public String send() throws Exception {
         latch = new CountDownLatch(messagesPerRequest);
         IntStream.range(0, messagesPerRequest)
-                .forEach(i -> this.template.send(topicName, String.valueOf(i),
-                        new PracticalAdvice("A Practical Advice", i))
+                .forEach(i -> this.kafkaTemplate.send(
+                            topicName, String.valueOf(i), new PracticalAdvice("A Practical Advice", i)
+                        )
                 );
         latch.await(60, TimeUnit.SECONDS);
         logger.info("All messages received");
         return "Hello Kafka!";
     }
 
+
     @KafkaListener(topics = "advice-topic", clientIdPrefix = "json",
             containerFactory = "kafkaListenerContainerFactory")
-    public void listenAsObject(ConsumerRecord<String, PracticalAdvice> cr,
+    public void listenAsObject(ConsumerRecord<String, PracticalAdvice> consumerRecord,
                                @Payload PracticalAdvice payload) {
-        logger.info("Logger 1 [JSON] received key {}: Type [{}] | Payload: {} | Record: {}", cr.key(),
-                typeIdHeader(cr.headers()), payload, cr.toString());
+        logger.info("Logger 1 [JSON] received key {}: Type [{}] | Payload: {} | Record: {}", consumerRecord.key(),
+                typeIdHeader(consumerRecord.headers()), payload, consumerRecord.toString());
         latch.countDown();
     }
 
     @KafkaListener(topics = "advice-topic", clientIdPrefix = "string",
             containerFactory = "kafkaListenerStringContainerFactory")
-    public void listenasString(ConsumerRecord<String, String> cr,
+    public void listenasString(ConsumerRecord<String, String> consumerRecord,
                                @Payload String payload) {
-        logger.info("Logger 2 [String] received key {}: Type [{}] | Payload: {} | Record: {}", cr.key(),
-                typeIdHeader(cr.headers()), payload, cr.toString());
+        logger.info("Logger 2 [String] received key {}: Type [{}] | Payload: {} | Record: {}", consumerRecord.key(),
+                typeIdHeader(consumerRecord.headers()), payload, consumerRecord.toString());
         latch.countDown();
     }
 
     @KafkaListener(topics = "advice-topic", clientIdPrefix = "bytearray",
             containerFactory = "kafkaListenerByteArrayContainerFactory")
-    public void listenAsByteArray(ConsumerRecord<String, byte[]> cr,
+    public void listenAsByteArray(ConsumerRecord<String, byte[]> consumerRecord,
                                   @Payload byte[] payload) {
-        logger.info("Logger 3 [ByteArray] received key {}: Type [{}] | Payload: {} | Record: {}", cr.key(),
-                typeIdHeader(cr.headers()), payload, cr.toString());
+        logger.info("Logger 3 [ByteArray] received key {}: Type [{}] | Payload: {} | Record: {}", consumerRecord.key(),
+                typeIdHeader(consumerRecord.headers()), payload, consumerRecord.toString());
         latch.countDown();
     }
+
 
     private static String typeIdHeader(Headers headers) {
         return StreamSupport.stream(headers.spliterator(), false)

@@ -5,7 +5,7 @@ spring:
       auto-offset-reset: earliest
     # change this property if you are using your own
     # Kafka cluster or your Docker IP is different
-    bootstrap-servers: localhost:9092
+    #bootstrap-servers: localhost:9092
 
 tpd:
   topic-name: advice-topic
